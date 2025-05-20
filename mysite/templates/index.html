@@ -8,7 +8,8 @@
     <style>
         body {
             margin: 0;
-            font-family: Arial, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f7fa;
         }
 
         .container {
@@ -18,34 +19,61 @@
 
         .left-pane {
             width: 50%;
-            border-right: 1px solid #ccc;
             display: flex;
             flex-direction: column;
+            background: #ffffff;
+            box-shadow: 4px 0 12px rgba(0, 0, 0, 0.05);
         }
 
         .top-bar {
-            padding: 10px;
-            background-color: #f2f2f2;
-            border-bottom: 1px solid #ccc;
+            padding: 12px 24px;
+            background-color: #f9f9f9;
+            border-bottom: 1px solid #e0e0e0;
             display: flex;
-            justify-content: center;   /* Center items horizontally */
-            align-items: center;       /* Center items vertically */
-            gap: 20px;                 /* Equal spacing between buttons */
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
         }
 
         .top-bar button {
-            margin-right: 10px;
+            padding: 10px 20px;
+            font-size: 15px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+            box-shadow: 0 2px 6px rgba(0, 123, 255, 0.2);
+        }
+
+        .top-bar button:disabled {
+            background-color: #a0c4ff;
+            cursor: not-allowed;
+        }
+
+        .top-bar button:hover:not(:disabled) {
+            background-color: #0056b3;
         }
 
         .text-display {
-            padding: 20px;
+            padding: 24px;
             flex-grow: 1;
             overflow-y: auto;
+            color: #333;
+        }
+
+        .text-display p {
+            margin: 0;
+            font-size: 16px;
+            line-height: 1.6;
         }
 
         .right-pane {
             width: 50%;
-            background-color: #fafafa;
+            background-color: #f0f2f5;
+            box-shadow: inset 4px 0 12px rgba(0, 0, 0, 0.03);
         }
     </style>
 </head>
@@ -54,18 +82,17 @@
         <!-- Left Pane -->
         <div class="left-pane">
             <div class="top-bar">
-                <button id="recordButton">Record</button>
-                <button id="stopButton" disabled>Stop & Upload</button>
+                <button id="recordButton">🎙️ Record</button>
+                <button id="stopButton" disabled>⏹️ Stop & Upload</button>
             </div>
             <div class="text-display" id="textDisplay">
-                <!-- You can dynamically insert transcript or messages here -->
                 <p>Welcome to the Voice Recorder</p>
             </div>
         </div>
 
         <!-- Right Pane -->
         <div class="right-pane">
-            <!-- Intentionally left blank for now -->
+            <!-- You can add features like waveform or history here later -->
         </div>
     </div>
 
