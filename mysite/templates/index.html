@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="csrf-token" content="{{ csrf_token }}">
+    <title>Voice Recorder</title>
+    {% load static %}
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+
+        .left-pane {
+            width: 50%;
+            border-right: 1px solid #ccc;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .top-bar {
+            padding: 10px;
+            background-color: #f2f2f2;
+            border-bottom: 1px solid #ccc;
+            display: flex;
+            justify-content: center;   /* Center items horizontally */
+            align-items: center;       /* Center items vertically */
+            gap: 20px;                 /* Equal spacing between buttons */
+        }
+
+        .top-bar button {
+            margin-right: 10px;
+        }
+
+        .text-display {
+            padding: 20px;
+            flex-grow: 1;
+            overflow-y: auto;
+        }
+
+        .right-pane {
+            width: 50%;
+            background-color: #fafafa;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Left Pane -->
+        <div class="left-pane">
+            <div class="top-bar">
+                <button id="recordButton">Record</button>
+                <button id="stopButton" disabled>Stop & Upload</button>
+            </div>
+            <div class="text-display" id="textDisplay">
+                <!-- You can dynamically insert transcript or messages here -->
+                <p>Welcome to the Voice Recorder</p>
+            </div>
+        </div>
+
+        <!-- Right Pane -->
+        <div class="right-pane">
+            <!-- Intentionally left blank for now -->
+        </div>
+    </div>
+
+    <script src="{% static 'js/recorder.js' %}"></script>
+</body>
+</html>
