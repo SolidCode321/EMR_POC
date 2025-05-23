@@ -86,3 +86,17 @@ document.getElementById('stopButton').addEventListener('click', () => {
     mediaRecorder.stop();
     document.getElementById('stopButton').disabled = true;
 });
+
+document.getElementById('formSelect').addEventListener('change', function () {
+    const selectedUrl = this.value;
+    const pdfViewer = document.getElementById('pdfViewer');
+    const downloadLink = document.getElementById('pdfDownloadLink');
+
+    if (selectedUrl) {
+        pdfViewer.setAttribute('data', selectedUrl);
+        downloadLink.setAttribute('href', selectedUrl);
+    } else {
+        pdfViewer.removeAttribute('data');
+        downloadLink.removeAttribute('href');
+    }
+});

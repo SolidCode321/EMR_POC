@@ -1,19 +1,21 @@
 from django.shortcuts import render
+from django.shortcuts import redirect
 from django.http import JsonResponse
 from django.conf import settings
-from .models import AudioFile
+from .models import AudioFile, MedicalForm
 import time
 import os, json
 
 from google import genai
 
-from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.csrf import csrf_exempt, csrf_protect
 from django.views.decorators.http import require_POST
 
 API_KEY = 'AIzaSyCBQzOAwHwxdttt_JXm5WWPJecnArCX2wM'
 
 def index(request):
-    return render(request, 'index.html')
+    forms = MedicalForm.objects.all()
+    return render(request, 'index.html', {'forms': forms})
 
 
 @csrf_exempt
@@ -63,3 +65,39 @@ def transcribe_audio(request):
         return JsonResponse({'transcription': response.text})
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
+    
+
+@csrf_protect
+def upload_form_page(request):
+    forms = MedicalForm.objects.all()
+    return render(request, 'upload_form.html', {'forms': forms})
+
+@require_POST
+@csrf_protect
+def submit_form(request):
+    title = request.POST.get('title')
+    pdf = request.FILES.get('pdf')
+
+    if title and pdf:
+        MedicalForm.objects.create(title=title, pdf=pdf)
+        return redirect('index')  # Redirect to home or success page
+    else:
+        return render(request, 'upload_form.html', {
+            'error': 'Both title and PDF are required.'
+        })
+
+@csrf_exempt
+def delete_form(request):
+    if request.method == 'POST':
+        form_id = request.POST.get('form_id')
+        try:
+            form = MedicalForm.objects.get(id=form_id)
+            form.delete()
+            return redirect('upload_form_page')  # Adjust based on your URL name
+        except MedicalForm.DoesNotExist:
+            return render(request, 'upload.html', {
+                'error': 'Form not found.',
+                'forms': MedicalForm.objects.all()
+            })
+
+    return redirect('upload_form_page')

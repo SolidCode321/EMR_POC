@@ -74,6 +74,15 @@
             width: 50%;
             background-color: #f0f2f5;
             box-shadow: inset 4px 0 12px rgba(0, 0, 0, 0.03);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #pdfViewer {
+            width: 100%;
+            height: 100%;
+            border: none;
         }
     </style>
 </head>
@@ -88,14 +97,40 @@
             <div class="text-display" id="textDisplay">
                 <p>Welcome to the Voice Recorder</p>
             </div>
+            <div style="padding: 16px; border-top: 1px solid #ddd;">
+                <div style="padding: 16px; text-align: center;">
+                    <a href="{% url 'upload_form_page' %}" style="text-decoration: none; color: #007bff;">➕ Upload New Medical Form</a>
+                </div>                
+                <label for="formSelector"><strong>Select Medical Form:</strong></label>
+                <select id="formSelector" style="margin-top: 8px; padding: 6px; width: 90%;">
+                    <option value="">-- Select a form --</option>
+                    {% for form in forms %}
+                        <option value="{{ form.pdf.url }}">{{ form.title }}</option>
+                        <script>console.log("{{ form.pdf.url }}")</script>
+                    {% endfor %}
+                </select>
+            </div>
         </div>
 
         <!-- Right Pane -->
         <div class="right-pane">
-            <!-- You can add features like waveform or history here later -->
+            <iframe id="pdfViewer" src=""></iframe>
         </div>
     </div>
 
     <script src="{% static 'js/recorder.js' %}"></script>
+    <script>
+        const selector = document.getElementById('formSelector');
+        const viewer = document.getElementById('pdfViewer');
+
+        selector.addEventListener('change', function () {
+            const selectedPdfUrl = this.value;
+            if (selectedPdfUrl) {
+                viewer.src = selectedPdfUrl + '#toolbar=1';
+            } else {
+                viewer.src = '';
+            }
+        });
+    </script>
 </body>
 </html>
