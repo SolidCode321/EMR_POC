@@ -11,5 +11,6 @@ urlpatterns = [
     path('upload-form/', views.upload_form_page, name='upload_form_page'),
     path('submit-form/', views.submit_form, name='submit_form'),
     path('delete-form/', views.delete_form, name='delete_form'),
+    path('fill-form/', views.fill_form, name='fill_pdf'),
 ]  + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 

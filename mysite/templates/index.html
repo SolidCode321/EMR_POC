@@ -109,6 +109,9 @@
                         <script>console.log("{{ form.pdf.url }}")</script>
                     {% endfor %}
                 </select>
+                <button id="fillPdfButton" style="margin-top: 10px; padding: 10px; width: 90%; background-color: #28a745; color: white; border: none; border-radius: 6px;">
+                    📝 Fill Selected PDF with Transcript
+                </button>
             </div>
         </div>
 
@@ -132,5 +135,37 @@
             }
         });
     </script>
+    <script>
+        document.getElementById('fillPdfButton').addEventListener('click', async () => {
+            const transcript = document.getElementById('textDisplay').innerText.trim();
+            const formSelector = document.getElementById('formSelector');
+            const pdfUrl = formSelector.value;
+        
+            if (!pdfUrl) {
+                alert('Please select a form.');
+                return;
+            }
+        
+            const response = await fetch("{% url 'fill_pdf' %}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+                },
+                body: JSON.stringify({
+                    pdf_url: pdfUrl,
+                    transcript: transcript
+                })
+            });
+        
+            const result = await response.json();
+            if (result.success) {
+                // Reload PDF viewer
+                document.getElementById('pdfViewer').src = result.filled_pdf_url + '#toolbar=1';
+            } else {
+                alert('Failed to fill PDF: ' + result.error);
+            }
+        });
+        </script>
 </body>
 </html>
