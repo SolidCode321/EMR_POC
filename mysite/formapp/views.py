@@ -5,6 +5,7 @@ from django.conf import settings
 from .models import AudioFile, MedicalForm
 import time
 import os, json, re
+from django.core.files import File
 
 from google import genai
 from fillpdf import fillpdfs
@@ -139,7 +140,8 @@ def fill_form(request):
         if not pdf_url or not transcript:
             return JsonResponse({'success': False, 'error': 'Missing transcript or PDF URL'})
 
-        file_path = os.path.join(settings.MEDIA_ROOT+'forms/', pdf_url)
+        media_relative_path = pdf_url.replace('/media/', '')  # removes the URL prefix
+        file_path = os.path.join(settings.MEDIA_ROOT, media_relative_path)
 
         form_fields = fillpdfs.get_form_fields(file_path)
         radio_options = get_radio_button_options(file_path)
@@ -155,17 +157,36 @@ def fill_form(request):
         fields_prompt = "\n".join(field_descriptions)
 
         prompt = f"""
-        Given the following transcript:
-        """
-        {transcript}
-        """
+        You are given a transcript of a conversation or medical consultation:
 
-        And the PDF form fields:
+        Transcript:
+        {transcript}
+
+        And the following list of PDF form fields. Some fields are text input, while others are radio buttons with defined selectable options:
+
+        Form Fields:
         {fields_prompt}
 
-        Fill the fields based on the transcript. Return a JSON object with field names as keys and the selected or filled values as values.
-        """
+        Please do the following:
+        1. Extract relevant information from the transcript to fill in each field.
+        2. For radio buttons, select the most appropriate option based on the transcript. If only one option is available, assume it should be selected if relevant.
+        3. Return the result as a JSON object where:
+            - Each key is the form field name.
+            - Each value is the selected or filled value for that field (for radio buttons, the option text or value).
 
+        Output Format (example):
+        {{
+            "field_name_1": "filled value",
+            "field_name_2": "selected radio option"
+        }}
+
+        Only return a valid JSON object. Do not include any explanation or extra text. and dont return as ```json```.
+        
+        """
+        
+        # print(transcript)
+        # print(fields_prompt)
+        
         # Initialize Gemini client
         client = genai.Client(api_key=API_KEY)
 
@@ -173,19 +194,31 @@ def fill_form(request):
             model='gemini-2.0-flash',
             contents=[prompt],
         )
+        raw_response = response.text.strip()
+
+        # Remove code fences if present
+        if raw_response.startswith("```json"):
+            raw_response = raw_response[len("```json"):].strip()
+        if raw_response.endswith("```"):
+            raw_response = raw_response[:-3].strip()
+
 
         try:
-            filled_data = json.loads(response.text)
+            print("Raw Gemini Response:")
+            print(raw_response)
+            filled_data = json.loads(raw_response)
+            print(filled_data)
         except json.JSONDecodeError:
             return JsonResponse({'success': False, 'error': 'Gemini returned an invalid JSON response'})
 
-        # Create output path for the filled PDF
-        filled_pdf_filename = f"filled_{os.path.basename(pdf_url)}"
-        filled_pdf_path = os.path.join(settings.MEDIA_ROOT, filled_pdf_filename)
+        # Overwrite the same file with filled data
+        fillpdfs.write_fillable_pdf(file_path, file_path, filled_data)
+        
+        form_entry = MedicalForm.objects.filter(pdf=media_relative_path).first()
+        if form_entry:
+            form_entry.save()
 
-        fillpdfs.write_fillable_pdf(file_path, filled_pdf_path, filled_data)
-
-        return JsonResponse({'success': True, 'filled_pdf_url': settings.MEDIA_URL + filled_pdf_filename})
+        return JsonResponse({'success': True, 'filled_pdf_url': settings.MEDIA_URL + file_path})
 
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})

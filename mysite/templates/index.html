@@ -95,7 +95,7 @@
                 <button id="stopButton" disabled>⏹️ Stop & Upload</button>
             </div>
             <div class="text-display" id="textDisplay">
-                <p>Welcome to the Voice Recorder</p>
+                <p>My name is Alexander Daniel, I am 21 years old and am a single man.</p>
             </div>
             <div style="padding: 16px; border-top: 1px solid #ddd;">
                 <div style="padding: 16px; text-align: center;">
@@ -157,11 +157,11 @@
                     transcript: transcript
                 })
             });
-        
             const result = await response.json();
             if (result.success) {
-                // Reload PDF viewer
-                document.getElementById('pdfViewer').src = result.filled_pdf_url + '#toolbar=1';
+                const refreshedUrl = result.filled_pdf_url + '?t=' + new Date().getTime() + '#toolbar=1';
+                document.getElementById('pdfViewer').src = refreshedUrl;
+                formSelector.value = result.filled_pdf_url; // Ensure selector matches the updated PDF
             } else {
                 alert('Failed to fill PDF: ' + result.error);
             }
