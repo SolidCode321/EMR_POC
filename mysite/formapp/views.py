@@ -140,20 +140,25 @@ def fill_form(request):
         if not pdf_url or not transcript:
             return JsonResponse({'success': False, 'error': 'Missing transcript or PDF URL'})
 
-        media_relative_path = pdf_url.replace('/media/', '')  # removes the URL prefix
-        file_path = os.path.join(settings.MEDIA_ROOT, media_relative_path)
+        # Convert URL path to local filesystem path
+        relative_path = pdf_url.replace(settings.MEDIA_URL, '')  # strip '/media/'
+        file_path = os.path.join(settings.MEDIA_ROOT, relative_path)
 
+        if not os.path.exists(file_path):
+            return JsonResponse({'success': False, 'error': 'PDF file not found on server.'})
+
+        # Extract form field structure
         form_fields = fillpdfs.get_form_fields(file_path)
         radio_options = get_radio_button_options(file_path)
 
+        # Prepare Gemini prompt
         field_descriptions = []
         for field, value in form_fields.items():
             if field in radio_options:
-                opts = ', '.join(radio_options[field])
-                field_descriptions.append(f"'{field}' is a radio button with options: {opts}.")
+                options = ', '.join(radio_options[field])
+                field_descriptions.append(f"'{field}' is a radio button with options: {options}.")
             else:
                 field_descriptions.append(f"'{field}' is a text field.")
-
         fields_prompt = "\n".join(field_descriptions)
 
         prompt = f"""
@@ -180,45 +185,38 @@ def fill_form(request):
             "field_name_2": "selected radio option"
         }}
 
-        Only return a valid JSON object. Do not include any explanation or extra text. and dont return as ```json```.
-        
+        Only return a valid JSON object. Do not include any explanation or extra text.
         """
-        
-        # print(transcript)
-        # print(fields_prompt)
-        
+
         # Initialize Gemini client
         client = genai.Client(api_key=API_KEY)
-
         response = client.models.generate_content(
             model='gemini-2.0-flash',
             contents=[prompt],
         )
         raw_response = response.text.strip()
 
-        # Remove code fences if present
+        # Cleanup and parse JSON response
         if raw_response.startswith("```json"):
             raw_response = raw_response[len("```json"):].strip()
         if raw_response.endswith("```"):
             raw_response = raw_response[:-3].strip()
 
-
         try:
-            print("Raw Gemini Response:")
-            print(raw_response)
             filled_data = json.loads(raw_response)
-            print(filled_data)
         except json.JSONDecodeError:
             return JsonResponse({'success': False, 'error': 'Gemini returned an invalid JSON response'})
 
-        # Overwrite the same file with filled data
+        # Fill and overwrite the existing PDF
         fillpdfs.write_fillable_pdf(file_path, file_path, filled_data)
-        
-        form_entry = MedicalForm.objects.filter(pdf=media_relative_path).first()
+
+        # Update timestamp or re-save form to reflect edit
+        form_entry = MedicalForm.objects.filter(pdf=relative_path).first()
         if form_entry:
             form_entry.save()
 
-        return JsonResponse({'success': True, 'filled_pdf_url': settings.MEDIA_URL + file_path})
+        refreshed_url = settings.MEDIA_URL + relative_path
+        return JsonResponse({'success': True, 'filled_pdf_url': refreshed_url})
 
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
